@@ -1,6 +1,11 @@
 #!/bin/bash
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
+#### THIS SCRIPT SHOULD BE SOURCED ####
+if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    echo "this script should be sourced"
+    exit 1
+fi
 
 function initialize() {
     #initialize
@@ -20,7 +25,13 @@ function initialize() {
     }
 }
 
-function gpt2() {
+function gpt() {
+    if [ "${1}" == "help" ]; then
+        echo "Use gpt [start-message] [chat-purpose] to start a conversation with gpt"
+        echo "Example: gpt \"How do I make bread?\" \"cooking\""
+        return
+    fi
+
     initialize
 
     python main.py --start-message "${1}" \
@@ -31,7 +42,13 @@ function gpt2() {
     return
 }
 
-function gpt-latest2() {
+function gpt-latest() {
+    if [ "${1}" == "help" ]; then
+        echo "Use gpt-latest [start-message] to load latest conversation with gpt using a new message"
+        echo "Example: gpt-latest \"How much oven time does it need?\""
+        return
+    fi
+
     initialize
 
     python main.py --start-message "${1}" \
@@ -43,6 +60,15 @@ function gpt-latest2() {
 }
 
 function gpt-from-file() {
+    if [ "${1}" == "help" ]; then
+        echo "Use gpt-from-file [file-name] [start-message] to load a conversation by filename with gpt"
+        echo "Example: gpt-from-file \"20240213T013639940428.json\" \"What if I don't have yeast?\""
+        return
+    elif [ -z "${1}" ]; then
+        echo "filename missing, please provide a valid json"
+        return 1
+    fi
+
     initialize
 
     python main.py --start-message "${2}" \

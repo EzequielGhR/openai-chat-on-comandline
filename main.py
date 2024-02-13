@@ -32,10 +32,12 @@ class OpenaiChat():
                 messages = self.messages
             )
 
+            #append first context message to messages
             chat_message = response.choices[0].message.content
             self._messages.append({"role": "assistant", "content": chat_message})
             print(f"assistant_: {chat_message}")
 
+            #Ask and parse user input
             message = input("user_: ")
             if message.lower() in ("quit", "exit"):
                 logging.info("quitting ephimeral chat")
@@ -53,22 +55,37 @@ class OpenaiChat():
     def load(self, message:str, **kwargs) -> None:
         latest = kwargs.get("latest") or False
 
-        if kwargs.get("filename"):
-            logging.info("filename provided, ignoring all other keyword arguments.")
-            with open(filename:=kwargs["filename"], "r") as f:
-                self._messages = json.loads(f.read())
+        #check for keyword arguments
+        try:
+            if kwargs.get("filename"):
+                logging.info("filename provided, ignoring all other keyword arguments.")
+                with open(filename:=kwargs["filename"], "r") as f:
+                    self._messages = json.loads(f.read())
+
+            elif latest:
+                filename = max(
+                    [dt.strptime(file_.rsplit(".json", 1)[0], fmt:="%Y%m%dT%H%M%S%f")
+                        for file_ in os.listdir() if file_.endswith(".json")]
+                ).strftime(fmt) + ".json"
+
+                logging.info("loading latest chat file \"%s\"" % filename)
+                with open(filename, "r") as f:
+                    self._messages = json.loads(f.read())
+            
+            self._messages.append({"role": "user", "content": message})
+            self.chat(loaded_filename=filename)
+
+        except FileNotFoundError as e:
+            logging.warning("File \"%s\" not found. Are you sure the name is correct?" % filename)
+            raise e
         
-        elif latest:
-            filename = max(
-                [dt.strptime(file_.rsplit(".json", 1)[0], fmt:="%Y%m%dT%H%M%S%f")
-                    for file_ in os.listdir() if file_.endswith(".json")]
-            ).strftime(fmt) + ".json"
-            logging.info("loading latest chat file \"%s\"" % filename)
-            with open(filename, "r") as f:
-                self._messages = json.loads(f.read())
+        except ValueError as e:
+            logging.warning("No conversations found")
+            raise e
         
-        self._messages.append({"role": "user", "content": message})
-        self.chat(loaded_filename=filename)
+        except Exception as e:
+            logging.warning("Exception raised %s" % str(e))
+            raise e
 
 if __name__ == "__main__":
     parser = ArgumentParser()
