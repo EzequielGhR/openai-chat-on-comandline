@@ -78,3 +78,8 @@ function gpt-from-file() {
     
     return 
 }
+
+function gpt-update() {
+    initialize
+    python update_prices.py && rollback || handle-error
+}
