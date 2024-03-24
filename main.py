@@ -26,7 +26,8 @@ if VERBOSE:
 def _get_latest_filename() -> str:
     return max(
         [dt.strptime(file_.rsplit(".json")[0], fmt:="%Y%m%dT%H%M%S%f")
-            for file_ in os.listdir() if file_.endswith(".json")]
+            for file_ in os.listdir() if file_.endswith(".json")],
+        default=""
     ).strftime(fmt)+".json"
 
 
@@ -54,7 +55,7 @@ class OpenaiChat():
             logging.info("Sending GPT request")
             response = openai.chat.completions.create(
                 model=MODEL,
-                messages = self.messages
+                messages=self.messages
             )
 
             #add price for this interaction
@@ -94,8 +95,6 @@ class OpenaiChat():
             self._messages.append({"role": "user", "content": message})
         
     def load(self, message:str, **kwargs) -> None:
-        latest = kwargs.get("latest") or False
-
         #check for keyword arguments
         try:
             if kwargs.get("filename"):
@@ -103,7 +102,7 @@ class OpenaiChat():
                 with open(filename:=kwargs["filename"], "r") as f:
                     self._messages = json.loads(f.read())
 
-            elif latest:
+            elif kwargs.get("latest"):
                 filename = _get_latest_filename()
                 logging.info("loading latest chat file \"%s\"" % filename)
                 with open(filename, "r") as f:
